@@ -45,11 +45,15 @@ trait ToDownloadProcessor extends BasicReaders with ScorexLogging {
       if (acc.lengthCompare(howMany) >= 0) {
         acc.take(howMany)
       } else {
-        val toDownload = headerIdsAtHeight(height).flatMap(id => typedModifierById[Header](id)).flatMap {
-          headerAtThisHeight =>
-            requiredModifiersForHeader(headerAtThisHeight).filter(m => condition(m._2))
+        val headersAtThisHeight = headerIdsAtHeight(height).flatMap(id => typedModifierById[Header](id))
+
+        if (headersAtThisHeight.nonEmpty) {
+          val toDownload = headersAtThisHeight.flatMap(h => requiredModifiersForHeader(h))
+                       .filter(m => condition(m._2))
+                    continuation(height + 1, acc ++ toDownload)
+        } else {
+          acc
         }
-        if (toDownload.nonEmpty) continuation(height + 1, acc ++ toDownload) else acc
       }
     }
 
