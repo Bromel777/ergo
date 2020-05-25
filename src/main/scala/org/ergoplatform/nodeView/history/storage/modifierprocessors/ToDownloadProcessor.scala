@@ -53,6 +53,8 @@ trait ToDownloadProcessor extends BasicReaders with ScorexLogging {
       }
     }
 
+    log.info(s"Looking for next modifiers to download, bestFullBlock header id = ${bestFullBlockOpt.map(_.header.id)}" )
+
     bestFullBlockOpt match {
       case _ if !isHeadersChainSynced || !nodeSettings.verifyTransactions =>
         // do not download full blocks if no headers-chain synced yet or SPV mode
