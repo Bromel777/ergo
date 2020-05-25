@@ -49,7 +49,7 @@ trait ToDownloadProcessor extends BasicReaders with ScorexLogging {
           headerAtThisHeight =>
             requiredModifiersForHeader(headerAtThisHeight).filter(m => condition(m._2))
         }
-        continuation(height + 1, acc ++ toDownload)
+        if(toDownload.nonEmpty) continuation(height + 1, acc ++ toDownload) else acc
       }
     }
 

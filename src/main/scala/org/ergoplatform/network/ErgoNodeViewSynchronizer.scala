@@ -96,7 +96,7 @@ class ErgoNodeViewSynchronizer(networkControllerRef: ActorRef,
   protected def broadcastInvForNewModifier(mod: PersistentNodeViewModifier): Unit = {
     mod match {
       case fb: ErgoFullBlock if fb.header.isNew(timeProvider, 10.hour) =>
-        Seq(fb.header, fb.blockTransactions, fb.extension).foreach(s => broadcastModifierInv(s))
+        fb.toSeq.foreach(s => broadcastModifierInv(s))
       case _ =>
     }
   }
