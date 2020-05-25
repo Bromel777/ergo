@@ -40,17 +40,15 @@ trait ToDownloadProcessor extends BasicReaders with ScorexLogging {
     * to synchronize full block chain with headers chain
     */
   def nextModifiersToDownload(howMany: Int, condition: ModifierId => Boolean): Seq[(ModifierTypeId, ModifierId)] = {
-    @tailrec
     def continuation(height: Int, acc: Seq[(ModifierTypeId, ModifierId)]): Seq[(ModifierTypeId, ModifierId)] = {
       if (acc.lengthCompare(howMany) >= 0) {
         acc.take(howMany)
       } else {
-        headerIdsAtHeight(height).headOption.flatMap(id => typedModifierById[Header](id)) match {
-          case Some(bestHeaderAtThisHeight) =>
-            val toDownload = requiredModifiersForHeader(bestHeaderAtThisHeight)
+        headerIdsAtHeight(height).flatMap(id => typedModifierById[Header](id)).flatMap {
+          headerAtThisHeight =>
+            val toDownload = requiredModifiersForHeader(headerAtThisHeight)
               .filter(m => condition(m._2))
             continuation(height + 1, acc ++ toDownload)
-          case None => acc
         }
       }
     }
@@ -59,9 +57,9 @@ trait ToDownloadProcessor extends BasicReaders with ScorexLogging {
       case _ if !isHeadersChainSynced || !nodeSettings.verifyTransactions =>
         // do not download full blocks if no headers-chain synced yet or SPV mode
         Seq.empty
-      case Some(fb) if isInBestChain(fb.id) =>
+      case Some(fb) =>
         // download children blocks of last full block applied in the best chain
-        continuation(fb.header.height + 1, Seq.empty)
+        continuation(fb.header.height - 100 , Seq.empty)
       case _ =>
         // if headers-chain is synced and no full blocks applied yet, find full block height to go from
         continuation(pruningProcessor.minimalFullBlockHeight, Seq.empty)
