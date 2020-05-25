@@ -54,7 +54,7 @@ class ErgoNodeViewSynchronizer(networkControllerRef: ActorRef,
       historyReaderOpt.foreach { h =>
         def downloadRequired(id: ModifierId): Boolean = deliveryTracker.status(id, Seq(h)) == ModifiersStatus.Unknown
 
-        h.nextModifiersToDownload(desiredSizeOfExpectingQueue - deliveryTracker.requestedSize, downloadRequired)
+        h.nextModifiersToDownload(networkSettings.maxModifiersCacheSize - deliveryTracker.requestedSize, downloadRequired)
           .groupBy(_._1).foreach(ids => requestDownload(ids._1, ids._2.map(_._2)))
       }
   }
@@ -66,7 +66,7 @@ class ErgoNodeViewSynchronizer(networkControllerRef: ActorRef,
     */
   override protected def requestMoreModifiers(applied: Seq[ErgoPersistentModifier]): Unit = {
     super.requestMoreModifiers(applied)
-    if (deliveryTracker.requestedSize < desiredSizeOfExpectingQueue / 2) {
+    if (deliveryTracker.requestedSize < networkSettings.maxModifiersCacheSize / 2) {
       historyReaderOpt foreach { h =>
         if (h.isHeadersChainSynced) {
           // our requested list is is half empty - request more missed modifiers
@@ -95,7 +95,7 @@ class ErgoNodeViewSynchronizer(networkControllerRef: ActorRef,
 
   protected def broadcastInvForNewModifier(mod: PersistentNodeViewModifier): Unit = {
     mod match {
-      case fb: ErgoFullBlock if fb.header.isNew(timeProvider, 1.hour) =>
+      case fb: ErgoFullBlock if fb.header.isNew(timeProvider, 10.hours) =>
         fb.toSeq.foreach(s => broadcastModifierInv(s))
       case _ =>
     }

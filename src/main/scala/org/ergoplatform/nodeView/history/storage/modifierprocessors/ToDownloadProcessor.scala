@@ -49,7 +49,7 @@ trait ToDownloadProcessor extends BasicReaders with ScorexLogging {
           headerAtThisHeight =>
             requiredModifiersForHeader(headerAtThisHeight).filter(m => condition(m._2))
         }
-        if(toDownload.nonEmpty) continuation(height + 1, acc ++ toDownload) else acc
+        if (toDownload.nonEmpty) continuation(height + 1, acc ++ toDownload) else acc
       }
     }
 
@@ -59,7 +59,7 @@ trait ToDownloadProcessor extends BasicReaders with ScorexLogging {
         Seq.empty
       case Some(fb) =>
         // download children blocks of last 100 full blocks applied to the best chain
-        continuation(fb.header.height - 100 , Seq.empty)
+        continuation(fb.header.height - 100, Seq.empty)
       case _ =>
         // if headers-chain is synced and no full blocks applied yet, find full block height to go from
         continuation(pruningProcessor.minimalFullBlockHeight, Seq.empty)
