@@ -58,8 +58,8 @@ trait ToDownloadProcessor extends BasicReaders with ScorexLogging {
         // do not download full blocks if no headers-chain synced yet or SPV mode
         Seq.empty
       case Some(fb) =>
-        // download children blocks of last full block applied in the best chain
-        continuation(fb.header.height - 150 , Seq.empty)
+        // download children blocks of last 100 full blocks applied to the best chain
+        continuation(fb.header.height - 100 , Seq.empty)
       case _ =>
         // if headers-chain is synced and no full blocks applied yet, find full block height to go from
         continuation(pruningProcessor.minimalFullBlockHeight, Seq.empty)
