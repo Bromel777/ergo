@@ -8,9 +8,11 @@ import org.ergoplatform.nodeView.history.{ErgoHistory, ErgoSyncInfo, ErgoSyncInf
 import org.ergoplatform.nodeView.mempool.ErgoMemPool
 import org.ergoplatform.settings.Constants
 import scorex.core.NodeViewHolder._
-import scorex.core.PersistentNodeViewModifier
+import scorex.core.{ModifierTypeId, PersistentNodeViewModifier}
+import scorex.core.network.NetworkController.ReceivableMessages.SendToNetwork
 import scorex.core.network.NodeViewSynchronizer.ReceivableMessages.{SemanticallySuccessfulModifier, SendLocalSyncInfo}
-import scorex.core.network.{ModifiersStatus, NodeViewSynchronizer}
+import scorex.core.network.message.{InvData, Message}
+import scorex.core.network.{Broadcast, ModifiersStatus, NodeViewSynchronizer, SendToRandom}
 import scorex.core.settings.NetworkSettings
 import scorex.core.utils.NetworkTimeProvider
 import scorex.util.ModifierId
@@ -85,9 +87,16 @@ class ErgoNodeViewSynchronizer(networkControllerRef: ActorRef,
       broadcastInvForNewModifier(mod)
   }
 
+  override protected def requestDownload(modifierTypeId: ModifierTypeId, modifierIds: Seq[ModifierId]): Unit = {
+    deliveryTracker.setRequested(modifierIds, modifierTypeId, None)
+    val msg = Message(requestModifierSpec, Right(InvData(modifierTypeId, modifierIds)), None)
+    networkControllerRef ! SendToNetwork(msg, Broadcast)
+  }
+
   protected def broadcastInvForNewModifier(mod: PersistentNodeViewModifier): Unit = {
     mod match {
-      case fb: ErgoFullBlock if fb.header.isNew(timeProvider, 1.hour) => fb.toSeq.foreach(s => broadcastModifierInv(s))
+      case fb: ErgoFullBlock if fb.header.isNew(timeProvider, 10.hour) =>
+        Seq(fb.header, fb.blockTransactions, fb.extension).foreach(s => broadcastModifierInv(s))
       case _ =>
     }
   }
